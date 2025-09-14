@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Text Humanizer + AI Detector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="w-full max-w-6xl bg-gray-800 shadow-2xl rounded-2xl p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">✨ Text Humanizer + AI Detection</h1>
+
+    <!-- Editor Section -->
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Input -->
+      <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col">
+        <label for="inputText" class="text-gray-400 mb-2">Insert (English) text here</label>
+        <textarea id="inputText" rows="12"
+          class="flex-grow w-full p-3 bg-gray-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
+          placeholder="Paste or type text here..."></textarea>
+        <div class="flex justify-between items-center mt-3">
+          <span id="inputCount" class="text-sm text-gray-400">0 words</span>
+          <button onclick="copyText('inputText')" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-lg">Copy</button>
+        </div>
+      </div>
+
+      <!-- Output -->
+      <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col">
+        <label class="text-gray-400 mb-2">Humanized text will appear here</label>
+        <div id="output"
+          class="flex-grow w-full p-3 bg-gray-800 text-gray-100 border border-gray-600 rounded-lg overflow-y-auto whitespace-pre-line"></div>
+        <div class="flex justify-between items-center mt-3">
+          <span id="outputCount" class="text-sm text-gray-400">0 words</span>
+          <button onclick="copyOutput()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-lg">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-center space-x-4 mt-6">
+      <button onclick="humanize()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition">
+        Humanize AI ✨
+      </button>
+      <button onclick="detectAI()" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition">
+        Detect AI 🧠
+      </button>
+    </div>
+
+    <!-- Detection Result -->
+    <div id="detectionBox" class="hidden mt-6 bg-gray-900 border border-gray-700 rounded-xl p-4">
+      <h2 class="text-xl font-semibold mb-2">AI Detection Result</h2>
+      <p id="detectionResult" class="text-gray-200"></p>
+    </div>
+  </div>
+
+  <script>
+    function countWords(text) {
+      return text.trim() ? text.trim().split(/\s+/).length : 0;
+    }
+
+    document.getElementById("inputText").addEventListener("input", () => {
+      const text = document.getElementById("inputText").value;
+      document.getElementById("inputCount").innerText = countWords(text) + " words";
+    });
+
+    async function humanize() {
+      const text = document.getElementById("inputText").value.trim();
+      if (!text) {
+        alert("Please enter some text first!");
+        return;
+      }
+
+      const response = await fetch("/humanize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      const result = await response.json();
+      document.getElementById("output").innerText = result.humanized_text;
+      document.getElementById("outputCount").innerText = countWords(result.humanized_text) + " words";
+    }
+
+    async function detectAI() {
+      const text = document.getElementById("inputText").value.trim();
+      if (!text) {
+        alert("Please enter some text first!");
+        return;
+      }
+
+      const response = await fetch("/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      const result = await response.json();
+      document.getElementById("detectionBox").classList.remove("hidden");
+      document.getElementById("detectionResult").innerText = result.message;
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id);
+      text.select();
+      document.execCommand("copy");
+    }
+
+    function copyOutput() {
+      const range = document.createRange();
+      range.selectNode(document.getElementById("output"));
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand("copy");
+      window.getSelection().removeAllRanges();
+    }
+  </script>
+</body>
+</html>
